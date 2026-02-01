@@ -30,5 +30,6 @@ RUN pip install --no-cache-dir -U pip && \
 COPY . .
 
 # Start the application
-# Use sh -c to expand $PORT variable provided by Railway
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
+COPY start.sh .
+RUN chmod +x start.sh
+CMD ["./start.sh"]
