@@ -1,16 +1,18 @@
 # Nixpacks Configuration for Swasth ID Backend
 
 # 1. Setup Phase: Install System Packages
-# We need python, tesseract (for OCR), and libraries for OpenCV (libxcb, libgl, etc.)
+# Using explicit package names from nixpkgs to ensure libraries are found
 [phases.setup]
 nixPkgs = [
-    "python311",         # Pin Python 3.11 for stability (avoid 3.13 issues)
-    "tesseract",         # Required for pytesseract OCR
-    "libxcb",            # Required for OpenCV
-    "libglib",           # Common dependency
-    "glibc",
-    "libxrender",
-    "libxext"
+    "python311",         # Python 3.11
+    "tesseract",         # OCR
+    "ffmpeg",            # Video processing support often needed by cv2
+    "glib",              # Core library
+    "xorg.libxcb",       # Fixes libxcb.so.1 error
+    "xorg.libX11",
+    "xorg.libXext",
+    "xorg.libXrender",
+    "libGL"              # OpenGL support
 ]
 
 # 2. Install Phase: Install Python Dependencies
