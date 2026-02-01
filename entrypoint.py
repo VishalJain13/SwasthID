@@ -8,10 +8,16 @@ sys.path.append(os.getcwd())
 if __name__ == "__main__":
     try:
         print("Starting uvicorn server...")
-        if os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON"):
-            print("Restoring serviceAccountKey.json from environment variable...")
-            with open("serviceAccountKey.json", "w") as f:
-                f.write(os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON"))
+        firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+        if firebase_json:
+            print(f"Restoring serviceAccountKey.json... (Length: {len(firebase_json)})")
+            # Create file in absolute path /app/serviceAccountKey.json to be safe
+            with open("/app/serviceAccountKey.json", "w") as f:
+                f.write(firebase_json)
+            print("Successfully wrote /app/serviceAccountKey.json")
+        else:
+            print("CRITICAL WARNING: FIREBASE_SERVICE_ACCOUNT_JSON environment variable is MISSING or EMPTY!")
+            print("The app will crash when initializing Firebase.")
 
         port = int(os.environ.get("PORT", 8000))
         print(f"Starting uvicorn server on port {port}...")
