@@ -1,0 +1,5 @@
+[build]
+builder = "DOCKER"
+
+[deploy]
+startCommand = "python entrypoint.py"
