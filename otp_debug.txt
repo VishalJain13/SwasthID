@@ -1,0 +1,28 @@
+
+--- SEND OTP ---
+Mobile: 9444529010
+Token present: True
+Customer ID present: True
+Status: 200
+Response: {"responseCode":200,"message":"SUCCESS","data":{"verificationId":"4615046","mobileNumber":"9444529010","responseCode":"200","timeout":"60.0","transactionId":"c1131d63-cca4-4126-b870-9109c4b422e6","flowType":"SMS","referenceId":"368d28a5-39bc-49ce-ab75-0c5363f8b708"}}
+
+--- SEND OTP ---
+Mobile: 9444529010
+Token present: True
+Customer ID present: True
+Status: 200
+Response: {"responseCode":200,"message":"SUCCESS","data":{"verificationId":"4615141","mobileNumber":"9444529010","responseCode":"200","timeout":"60.0","transactionId":"a6904400-6a31-4432-b1b0-60074074e138","flowType":"SMS","referenceId":"6eebd329-6508-47cc-8025-d6b49fc97254"}}
+
+--- SEND OTP ---
+Mobile: 9444529010
+Token present: True
+Customer ID present: True
+Status: 200
+Response: {"responseCode":200,"message":"SUCCESS","data":{"verificationId":"4615281","mobileNumber":"9444529010","responseCode":"200","timeout":"60.0","transactionId":"77b07585-42f2-4c33-963b-3a260ee61180","flowType":"SMS","referenceId":"7c8fec89-df51-4ce1-9283-e57e3c704a7a"}}
+
+--- SEND OTP ---
+Mobile: 9444529010
+Token present: True
+Customer ID present: True
+Status: 200
+Response: {"responseCode":200,"message":"SUCCESS","data":{"verificationId":"4617188","mobileNumber":"9444529010","responseCode":"200","timeout":"60.0","transactionId":"fe360066-fcdb-4a80-b874-c50637f3a31b","flowType":"SMS","referenceId":"bc74d9b4-7df5-450b-a087-b5486ffd382a"}}
