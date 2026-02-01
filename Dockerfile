@@ -9,12 +9,11 @@ ENV PYTHONUNBUFFERED=1
 # ffmpeg, libsm6, libxext6: Required for OpenCV
 # tesseract-ocr: Required for pytesseract
 # libgl1-mesa-glx: Often required for OpenCV
-RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
     libxext6 \
     tesseract-ocr \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
