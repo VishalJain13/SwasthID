@@ -30,4 +30,4 @@ RUN pip install --no-cache-dir -U pip && \
 COPY . .
 
 # Start the application
-CMD ["python", "start_server.py"]
+CMD ["python", "entrypoint.py"]
