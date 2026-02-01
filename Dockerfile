@@ -30,7 +30,4 @@ RUN pip install --no-cache-dir -U pip && \
 COPY . .
 
 # Start the application
-COPY start.sh .
-RUN sed -i 's/\r$//' start.sh
-RUN chmod +x start.sh
-CMD ["./start.sh"]
+CMD ["python", "start_server.py"]
