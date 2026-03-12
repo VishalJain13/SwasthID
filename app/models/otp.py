@@ -112,7 +112,7 @@ def verify_otp(mobile: str, otp: str, verification_id: str):
     }
 
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=5)
+        response = requests.get(url, params=params, headers=headers, timeout=15)
 
         if response.status_code != 200:
              # Fallback if service fails during verify (unlikely but safe)

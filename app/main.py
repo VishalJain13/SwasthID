@@ -33,6 +33,7 @@ from app.models.profile import Profile
 from app.models.health_id import HealthID
 from app.models.visit import Visit
 from app.models.medical_record import MedicalRecord
+from app.models.medical_document import MedicalDocument
 from app.models.disease_surveillance import DiseaseSurveillance
 from app.rag import swasth_ai_answer
 
@@ -76,11 +77,13 @@ from fastapi.staticfiles import StaticFiles
 os.makedirs("qr_codes", exist_ok=True)
 os.makedirs("prescriptions", exist_ok=True)
 os.makedirs("id_proofs", exist_ok=True)
+os.makedirs("medical_records", exist_ok=True)
 
 # Mount Static Directories
 app.mount("/qr_codes", StaticFiles(directory="qr_codes"), name="qr_codes")
 app.mount("/prescriptions", StaticFiles(directory="prescriptions"), name="prescriptions")
 app.mount("/id_proofs", StaticFiles(directory="id_proofs"), name="id_proofs")
+app.mount("/medical_records", StaticFiles(directory="medical_records"), name="medical_records")
 
 from app.models.chat import ChatSession, ChatMessage
 
@@ -744,6 +747,54 @@ def create_visit(
         "visit_id": visit_uid,
         "synced": False
     }
+
+
+@app.post("/visits/update")
+def update_visit(
+    visit_id: str,
+    facility_name: str = None,
+    district: str = None,
+    state: str = None,
+    visit_type: str = None,
+    chief_complaint: str = None,
+    symptoms: str = None,
+    temperature_c: float = None,
+    bp: str = None,
+    spo2: int = None,
+    vaccine_given: bool = None,
+    vaccine_name: str = None,
+    next_dose_due_date: str = None,
+    referred: bool = None,
+    referred_to: str = None,
+    referral_reason: str = None,
+    doctor_name: str = None,
+    specialization: str = None,
+    db: Session = Depends(get_db)
+):
+    visit = db.query(Visit).filter(Visit.visit_id == visit_id).first()
+    if not visit:
+        raise HTTPException(status_code=404, detail="Visit not found")
+
+    if facility_name: visit.facility_name = facility_name
+    if district: visit.district = district
+    if state: visit.state = state
+    if visit_type: visit.visit_type = visit_type
+    if chief_complaint: visit.chief_complaint = chief_complaint
+    if symptoms: visit.symptoms = symptoms
+    if temperature_c is not None: visit.temperature_c = temperature_c
+    if bp: visit.bp = bp
+    if spo2 is not None: visit.spo2 = spo2
+    if vaccine_given is not None: visit.vaccine_given = vaccine_given
+    if vaccine_name: visit.vaccine_name = vaccine_name
+    if next_dose_due_date: visit.next_dose_due_date = next_dose_due_date
+    if referred is not None: visit.referred = referred
+    if referred_to: visit.referred_to = referred_to
+    if referral_reason: visit.referral_reason = referral_reason
+    if doctor_name: visit.doctor_name = doctor_name
+    if specialization: visit.specialization = specialization
+
+    db.commit()
+    return {"message": "Visit updated successfully"}
 
 
 @app.post("/records/create")
@@ -1480,4 +1531,113 @@ def get_vaccine_certificate(health_id: str, db: Session = Depends(get_db)):
         "certificate_id": cert_id,
         "uhid": health_id,
         "qr_data": f"SWASTH_ID:{health_id}|VAC:YES|ID:{cert_id}"
+    }
+
+# -----------------------
+# RECORDS TAB ENDPOINTS
+# -----------------------
+
+@app.post("/api/records/upload")
+def upload_medical_record(
+    health_id: str = Form(...),
+    visit_id: str = Form(None),
+    document_type: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    import os
+    import uuid
+    from datetime import datetime
+
+    os.makedirs("medical_records", exist_ok=True)
+    
+    file_extension = file.filename.split(".")[-1]
+    doc_uid = str(uuid.uuid4())
+    filename = f"{health_id}_{doc_uid}.{file_extension}"
+    file_path = os.path.join("medical_records", filename)
+
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+
+    # Replace windows backslashes for web URL
+    file_url = file_path.replace("\\", "/")
+
+    doc = MedicalDocument(
+        document_id=doc_uid,
+        health_id=health_id,
+        visit_id=visit_id,
+        document_type=document_type,
+        file_url=f"/{file_url}",
+        file_name=file.filename
+    )
+
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
+    return {
+        "message": "Record uploaded successfully",
+        "document_id": doc_uid,
+        "file_url": doc.file_url
+    }
+
+@app.get("/api/patients/{health_id}/records")
+def get_patient_records(health_id: str, db: Session = Depends(get_db)):
+    visits = db.query(Visit).filter(Visit.health_id == health_id).order_by(Visit.created_at.desc()).all()
+    documents = db.query(MedicalDocument).filter(MedicalDocument.health_id == health_id).all()
+
+    # Group documents by visit_id
+    doc_map = {}
+    for doc in documents:
+        v_id = doc.visit_id or "unassigned"
+        if v_id not in doc_map:
+            doc_map[v_id] = []
+        doc_map[v_id].append({
+            "id": doc.document_id,
+            "title": doc.file_name,
+            "type": doc.document_type,
+            "uploadDate": doc.created_at.isoformat() if doc.created_at else datetime.now().isoformat(),
+            "fileUrl": doc.file_url
+        })
+    
+    visit_groups = []
+    for v in visits:
+        docs = doc_map.get(v.visit_id, [])
+        # We only want to show visits if they have records, or if we want to show all timeline anyway.
+        # User requested: "Medical Timeline: Visits displayed chronologically. Attachments: X..."
+        # If visit has NO attachments, maybe we still show it so they can add to it. Let's include all.
+        visit_groups.append({
+            "visitId": v.visit_id,
+            "visitDate": v.created_at.isoformat() if v.created_at else datetime.now().isoformat(),
+            "diagnosis": v.chief_complaint or "General Checkup",
+            "doctorName": v.doctor_name or "-",
+            "documents": docs,
+            "symptoms": v.symptoms,
+            "temperature_c": v.temperature_c,
+            "bp": v.bp,
+            "spo2": v.spo2,
+            "visitType": v.visit_type,
+            "facilityName": v.facility_name,
+            "specialization": v.specialization,
+            "vaccineGiven": v.vaccine_given,
+            "vaccineName": v.vaccine_name,
+            "nextDoseDate": v.next_dose_due_date,
+            "referred": v.referred,
+            "referredTo": v.referred_to,
+            "referralReason": v.referral_reason,
+        })
+
+    # Add unassigned documents as a generic group at the top or bottom
+    if "unassigned" in doc_map and doc_map["unassigned"]:
+        visit_groups.insert(0, {
+            "visitId": "unassigned",
+            "visitDate": doc_map["unassigned"][0]["uploadDate"], 
+            "diagnosis": "Uploaded Records (No Visit Linked)",
+            "doctorName": "-",
+            "documents": doc_map["unassigned"]
+        })
+
+    return {
+        "health_id": health_id,
+        "visits": visit_groups
     }
